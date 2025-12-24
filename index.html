@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Bias Files | A Visual Novel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&family=Permanent+Marker&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink-black: #0a0a0f;
+      --paper-cream: #f5f0e1;
+      --danger-red: #e63946;
+      --cyber-blue: #4cc9f0;
+      --warning-yellow: #ffbe0b;
+      --justice-green: #06d6a0;
+      --shadow-purple: #7b2cbf;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--ink-black);
+      font-family: 'Patrick Hand', cursive;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Comic Book Container */
+    .comic-book {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 20px 150px 20px;
+    }
+
+    /* Page Navigation */
+    .nav-controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+      z-index: 1000;
+      background: rgba(10, 10, 15, 0.9);
+      padding: 15px 25px;
+      border-radius: 10px;
+    }
+
+    .nav-btn {
+      background: var(--paper-cream);
+      border: 4px solid var(--ink-black);
+      padding: 15px 30px;
+      font-family: 'Bangers', cursive;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 var(--ink-black);
+      transition: all 0.1s;
+      text-transform: uppercase;
+    }
+
+    .nav-btn:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--ink-black);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .page-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--danger-red);
+      color: white;
+      padding: 10px 20px;
+      font-family: 'Bangers', cursive;
+      font-size: 1.5rem;
+      border: 3px solid var(--ink-black);
+      z-index: 1000;
+    }
+
+    /* Comic Page Base */
+    .comic-page {
+      display: none;
+      background: var(--paper-cream);
+      border: 8px solid var(--ink-black);
+      min-height: calc(100vh - 180px);
+      position: relative;
+      overflow: hidden;
+      animation: pageFlip 0.4s ease-out;
+      margin-bottom: 80px;
+    }
+
+    @keyframes pageFlip {
+      from {
+        opacity: 0;
+        transform: rotateY(-10deg) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: rotateY(0) scale(1);
+      }
+    }
+
+    /* Halftone Pattern Overlay */
+    .comic-page::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px);
+      background-size: 4px 4px;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Panel Styles */
+    .panel {
+      border: 4px solid var(--ink-black);
+      position: relative;
+      overflow: hidden;
+      background: white;
+    }
+
+    .panel-content {
+      padding: 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Speech Bubbles */
+    .speech-bubble {
+      background: white;
+      border: 3px solid var(--ink-black);
+      border-radius: 20px;
+      padding: 15px 20px;
+      position: relative;
+      font-size: 1.1rem;
+      max-width: 280px;
+      box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    }
+
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -15px;
+      left: 30px;
+      border: 10px solid transparent;
+      border-top-color: var(--ink-black);
+    }
+
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 32px;
+      border: 8px solid transparent;
+      border-top-color: white;
+      z-index: 1;
+    }
+
+    .thought-bubble {
+      background: white;
+      border: 3px solid var(--ink-black);
+      border-radius: 50%;
+      padding: 20px;
+      position: relative;
+    }
+
+    .thought-bubble::after {
+      content: '○ ○';
+      position: absolute;
+      bottom: -25px;
+      left: 20px;
+      font-size: 0.8rem;
+      letter-spacing: 5px;
+    }
+
+    /* Narrative Box */
+    .narrative-box {
+      background: var(--warning-yellow);
+      border: 3px solid var(--ink-black);
+      padding: 15px 20px;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .narrative-box.danger {
+      background: var(--danger-red);
+      color: white;
+    }
+
+    .narrative-box.info {
+      background: var(--cyber-blue);
+    }
+
+    .narrative-box.success {
+      background: var(--justice-green);
+    }
+
+    /* Comic Title Styles */
+    .comic-title {
+      font-family: 'Bangers', cursive;
+      font-size: 4rem;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      text-shadow: 4px 4px 0 var(--danger-red), 8px 8px 0 var(--ink-black);
+      color: var(--ink-black);
+    }
+
+    .subtitle {
+      font-family: 'Permanent Marker', cursive;
+      font-size: 1.5rem;
+      text-align: center;
+      color: var(--shadow-purple);
+    }
+
+    /* Character Illustrations (CSS Art) */
+    .character {
+      width: 120px;
+      height: 160px;
+      position: relative;
+    }
+
+    .character-head {
+      width: 60px;
+      height: 70px;
+      background: #ffd5c8;
+      border-radius: 50% 50% 45% 45%;
+      border: 3px solid var(--ink-black);
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .character-eyes {
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+    }
+
+    .eye {
+      width: 10px;
+      height: 12px;
+      background: var(--ink-black);
+      border-radius: 50%;
+    }
+
+    .character-body {
+      width: 70px;
+      height: 60px;
+      background: var(--cyber-blue);
+      border: 3px solid var(--ink-black);
+      margin: -5px auto 0;
+      border-radius: 10px 10px 0 0;
+    }
+
+    /* AI Robot Character */
+    .robot-head {
+      width: 70px;
+      height: 60px;
+      background: linear-gradient(135deg, #64748b, #94a3b8);
+      border: 3px solid var(--ink-black);
+      border-radius: 10px;
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .robot-eyes {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+    }
+
+    .robot-eye {
+      width: 15px;
+      height: 15px;
+      background: var(--danger-red);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--danger-red);
+      animation: robotBlink 2s infinite;
+    }
+
+    @keyframes robotBlink {
+      0%, 90%, 100% { opacity: 1; }
+      95% { opacity: 0.3; }
+    }
+
+    .robot-body {
+      width: 80px;
+      height: 70px;
+      background: linear-gradient(135deg, #475569, #64748b);
+      border: 3px solid var(--ink-black);
+      margin: 5px auto 0;
+      border-radius: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .robot-screen {
+      width: 50px;
+      height: 30px;
+      background: var(--ink-black);
+      border-radius: 3px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Source Code Pro', monospace;
+      color: var(--justice-green);
+      font-size: 0.6rem;
+    }
+
+    /* Action Effects */
+    .action-burst {
+      position: absolute;
+      font-family: 'Bangers', cursive;
+      font-size: 2.5rem;
+      color: var(--danger-red);
+      text-shadow: 2px 2px 0 var(--warning-yellow);
+      transform: rotate(-10deg);
+      animation: burst 0.5s ease-out;
+    }
+
+    @keyframes burst {
+      from { transform: rotate(-10deg) scale(0); }
+      to { transform: rotate(-10deg) scale(1); }
+    }
+
+    /* Page-Specific Layouts */
+
+    /* PAGE 1: Cover */
+    .page-cover {
+      background: linear-gradient(180deg, var(--ink-black) 0%, #1a1a2e 50%, var(--shadow-purple) 100%);
+      padding: 40px;
+      text-align: center;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .page-cover .comic-title {
+      color: var(--paper-cream);
+      font-size: 5rem;
+      margin-bottom: 20px;
+      animation: titleGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes titleGlow {
+      from { text-shadow: 4px 4px 0 var(--danger-red), 8px 8px 0 var(--shadow-purple); }
+      to { text-shadow: 4px 4px 20px var(--danger-red), 8px 8px 30px var(--cyber-blue); }
+    }
+
+    .cover-illustration {
+      width: 300px;
+      height: 200px;
+      position: relative;
+      margin: 30px 0;
+    }
+
+    .cover-robot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .data-streams {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .data-stream {
+      position: absolute;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.7rem;
+      color: var(--justice-green);
+      opacity: 0.6;
+      animation: streamDown 3s linear infinite;
+    }
+
+    @keyframes streamDown {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(400%); }
+    }
+
+    .cover-tagline {
+      color: var(--paper-cream);
+      font-family: 'Permanent Marker', cursive;
+      font-size: 1.3rem;
+      margin-top: 20px;
+    }
+
+    .chapter-badge {
+      background: var(--danger-red);
+      color: white;
+      padding: 8px 25px;
+      font-family: 'Bangers', cursive;
+      font-size: 1.2rem;
+      border: 3px solid var(--ink-black);
+      transform: rotate(-3deg);
+      margin-top: 30px;
+    }
+
+    /* Grid Layouts for Story Pages */
+    .grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      padding: 15px;
+      height: calc(100vh - 180px);
+    }
+
+    .grid-story {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr 1fr;
+      gap: 10px;
+      padding: 15px;
+      min-height: calc(100vh - 180px);
+    }
+
+    .grid-story .header-panel {
+      grid-column: 1 / -1;
+    }
+
+    .grid-climax {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      padding: 15px;
+      min-height: calc(100vh - 180px);
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    /* Chapter Headers */
+    .chapter-header {
+      background: var(--ink-black);
+      color: var(--paper-cream);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .chapter-header h2 {
+      font-family: 'Bangers', cursive;
+      font-size: 2.5rem;
+      margin-bottom: 5px;
+    }
+
+    .chapter-header .chapter-subtitle {
+      font-family: 'Permanent Marker', cursive;
+      color: var(--warning-yellow);
+    }
+
+    /* Scene Illustrations */
+    .scene {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      position: relative;
+    }
+
+    /* Office Scene */
+    .office-bg {
+      background: linear-gradient(180deg, #e8e8e8 0%, #f5f5f5 100%);
+    }
+
+    .desk {
+      width: 150px;
+      height: 60px;
+      background: #8b5a2b;
+      border: 3px solid var(--ink-black);
+      position: relative;
+      margin-top: 20px;
+    }
+
+    .computer {
+      width: 60px;
+      height: 50px;
+      background: #333;
+      border: 3px solid var(--ink-black);
+      position: absolute;
+      top: -55px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 5px 5px 0 0;
+    }
+
+    .computer-screen {
+      width: 50px;
+      height: 35px;
+      background: var(--cyber-blue);
+      margin: 5px auto;
+      border-radius: 2px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+    }
+
+    /* Resume Stack */
+    .resume-stack {
+      position: relative;
+      width: 80px;
+      height: 100px;
+    }
+
+    .resume {
+      width: 70px;
+      height: 90px;
+      background: white;
+      border: 2px solid var(--ink-black);
+      position: absolute;
+      padding: 8px;
+      font-size: 0.5rem;
+      font-family: 'Source Code Pro', monospace;
+    }
+
+    .resume:nth-child(1) { transform: rotate(-5deg); top: 0; left: 0; }
+    .resume:nth-child(2) { transform: rotate(3deg); top: 5px; left: 5px; }
+    .resume:nth-child(3) { transform: rotate(-2deg); top: 10px; left: 10px; }
+
+    .resume.rejected {
+      background: #ffcccc;
+    }
+
+    .resume.rejected::after {
+      content: 'REJECTED';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-20deg);
+      color: var(--danger-red);
+      font-family: 'Bangers', cursive;
+      font-size: 0.8rem;
+      border: 2px solid var(--danger-red);
+      padding: 2px 5px;
+    }
+
+    /* Face Recognition Scene */
+    .face-scan {
+      width: 100px;
+      height: 120px;
+      border: 4px solid var(--cyber-blue);
+      border-radius: 10px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(76, 201, 240, 0.1);
+    }
+
+    .scan-line {
+      position: absolute;
+      width: 100%;
+      height: 3px;
+      background: var(--cyber-blue);
+      animation: scanMove 2s ease-in-out infinite;
+    }
+
+    @keyframes scanMove {
+      0%, 100% { top: 10%; }
+      50% { top: 90%; }
+    }
+
+    .face-result {
+      position: absolute;
+      bottom: -30px;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+
+    .face-result.success {
+      background: var(--justice-green);
+    }
+
+    .face-result.fail {
+      background: var(--danger-red);
+      color: white;
+    }
+
+    /* Stats Display */
+    .stats-display {
+      background: var(--ink-black);
+      color: var(--justice-green);
+      padding: 15px;
+      border-radius: 10px;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.9rem;
+    }
+
+    .stats-display .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+      padding: 5px;
+      border-bottom: 1px solid #333;
+    }
+
+    .stats-display .stat-bad {
+      color: var(--danger-red);
+    }
+
+    .stats-display .stat-good {
+      color: var(--justice-green);
+    }
+
+    /* City Visualization */
+    .city-compare {
+      display: flex;
+      gap: 30px;
+      align-items: flex-end;
+    }
+
+    .city {
+      text-align: center;
+    }
+
+    .city-bar {
+      width: 60px;
+      background: var(--cyber-blue);
+      border: 3px solid var(--ink-black);
+      margin: 0 auto 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding-bottom: 5px;
+    }
+
+    .city-bar.city-a {
+      height: 150px;
+    }
+
+    .city-bar.city-b {
+      height: 50px;
+      background: var(--warning-yellow);
+    }
+
+    .people-icons {
+      font-size: 0.8rem;
+    }
+
+    .city-label {
+      font-family: 'Bangers', cursive;
+      font-size: 1.2rem;
+    }
+
+    .city-stat {
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.7rem;
+    }
+
+    /* Test/Benchmark Scene */
+    .test-paper {
+      width: 120px;
+      background: white;
+      border: 3px solid var(--ink-black);
+      padding: 15px;
+      position: relative;
+    }
+
+    .test-paper h4 {
+      font-family: 'Bangers', cursive;
+      font-size: 0.9rem;
+      border-bottom: 2px solid var(--ink-black);
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+
+    .test-question {
+      font-size: 0.6rem;
+      margin: 8px 0;
+      font-family: 'Source Code Pro', monospace;
+    }
+
+    .grade-stamp {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-family: 'Bangers', cursive;
+      font-size: 1.5rem;
+      color: var(--danger-red);
+      transform: rotate(15deg);
+    }
+
+    /* Conclusion Page */
+    .conclusion-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: auto repeat(2, 1fr) auto;
+      gap: 10px;
+      padding: 15px;
+      min-height: calc(100vh - 180px);
+    }
+
+    .bias-recap {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+    }
+
+    .bias-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      border: 3px solid var(--ink-black);
+      flex-shrink: 0;
+    }
+
+    .bias-icon.historical { background: var(--warning-yellow); }
+    .bias-icon.representation { background: var(--danger-red); color: white; }
+    .bias-icon.aggregation { background: var(--cyber-blue); }
+    .bias-icon.evaluation { background: var(--shadow-purple); color: white; }
+
+    .bias-text h4 {
+      font-family: 'Bangers', cursive;
+      font-size: 1.1rem;
+    }
+
+    .bias-text p {
+      font-size: 0.85rem;
+    }
+
+    /* Call to Action */
+    .cta-panel {
+      background: var(--ink-black);
+      color: var(--paper-cream);
+      text-align: center;
+      padding: 30px;
+    }
+
+    .cta-panel h3 {
+      font-family: 'Bangers', cursive;
+      font-size: 2rem;
+      color: var(--warning-yellow);
+      margin-bottom: 10px;
+    }
+
+    .cta-panel p {
+      font-size: 1.1rem;
+    }
+
+    /* Credits */
+    .credits {
+      text-align: center;
+      padding: 20px;
+      font-family: 'Permanent Marker', cursive;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .comic-title { font-size: 2.5rem; }
+      .page-cover .comic-title { font-size: 3rem; }
+      .grid-2x2, .grid-story { gap: 5px; padding: 10px; }
+      .speech-bubble { font-size: 0.9rem; padding: 10px 15px; max-width: 200px; }
+      .chapter-header h2 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-indicator">Page <span id="currentPage">1</span>/10</div>
+
+  <div class="comic-book">
+    <!-- PAGE 1: Cover -->
+    <div class="comic-page page-cover" data-page="1">
+      <div class="data-streams">
+        <span class="data-stream" style="left: 10%; animation-delay: 0s;">01001010</span>
+        <span class="data-stream" style="left: 25%; animation-delay: 0.5s;">BIAS</span>
+        <span class="data-stream" style="left: 40%; animation-delay: 1s;">11010101</span>
+        <span class="data-stream" style="left: 55%; animation-delay: 1.5s;">DATA</span>
+        <span class="data-stream" style="left: 70%; animation-delay: 2s;">00110011</span>
+        <span class="data-stream" style="left: 85%; animation-delay: 2.5s;">AI</span>
+      </div>
+      
+      <h1 class="comic-title">The Bias Files</h1>
+      <p class="subtitle">When Algorithms Go Wrong</p>
+      
+      <div class="cover-illustration">
+        <div class="cover-robot">
+          <div class="robot-head">
+            <div class="robot-eyes">
+              <div class="robot-eye"></div>
+              <div class="robot-eye"></div>
+            </div>
+          </div>
+          <div class="robot-body">
+            <div class="robot-screen">BIAS?</div>
+          </div>
+        </div>
+      </div>
+      
+      <p class="cover-tagline">A visual journey through the hidden flaws in AI systems</p>
+      <div class="chapter-badge">An Interactive Visual Novel</div>
+    </div>
+
+    <!-- PAGE 2: Introduction -->
+    <div class="comic-page" data-page="2">
+      <div class="grid-story">
+        <div class="panel header-panel">
+          <div class="narrative-box info" style="text-align: center; font-size: 1.1rem;">
+            <strong>THE YEAR IS 2025.</strong> AI systems make decisions about our lives every day...<br>
+            But what happens when these systems inherit our worst tendencies?
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+            <div class="robot-head" style="transform: scale(1.5);">
+              <div class="robot-eyes">
+                <div class="robot-eye"></div>
+                <div class="robot-eye"></div>
+              </div>
+            </div>
+            <div class="speech-bubble" style="margin-top: 30px; background: #1a1a2e; color: var(--cyber-blue); border-color: var(--cyber-blue);">
+              I am trained on YOUR data. YOUR history. YOUR choices.
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: var(--paper-cream);">
+            <div class="character">
+              <div class="character-head">
+                <div class="character-eyes">
+                  <div class="eye"></div>
+                  <div class="eye"></div>
+                </div>
+              </div>
+              <div class="character-body"></div>
+            </div>
+            <div class="thought-bubble" style="margin-top: 20px;">
+              So if our data is biased... the AI is too?
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel full-width">
+          <div class="narrative-box danger" style="text-align: center; font-size: 1.2rem;">
+            <strong>EXACTLY.</strong> Let's explore the 4 types of bias that haunt AI systems...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: Historical Bias - Setup -->
+    <div class="comic-page" data-page="3">
+      <div class="grid-story">
+        <div class="panel header-panel chapter-header">
+          <h2>Chapter 1: Historical Bias</h2>
+          <p class="chapter-subtitle">"The Past Haunts the Algorithm"</p>
+        </div>
+        
+        <div class="panel">
+          <div class="scene office-bg">
+            <div class="narrative-box" style="position: absolute; top: 10px; left: 10px; right: 10px;">
+              AMAZON HQ, 2014. The company builds an AI to screen job applications...
+            </div>
+            <div class="desk" style="margin-top: 60px;">
+              <div class="computer">
+                <div class="computer-screen">🤖</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: #f0f0f0;">
+            <div class="speech-bubble" style="background: var(--cyber-blue); border-color: var(--ink-black);">
+              <strong>AI SYSTEM:</strong><br>
+              Training complete! I've analyzed 10 years of successful hires to find the best candidates.
+            </div>
+            <div class="robot-head" style="margin-top: 20px;">
+              <div class="robot-eyes">
+                <div class="robot-eye"></div>
+                <div class="robot-eye"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: #fff5f5;">
+            <p style="font-family: 'Permanent Marker'; margin-bottom: 15px; color: var(--danger-red);">THE PROBLEM:</p>
+            <div class="resume-stack">
+              <div class="resume">
+                <strong>HIRED</strong><br>
+                John S.<br>
+                Male<br>
+                ✓✓✓
+              </div>
+              <div class="resume">
+                <strong>HIRED</strong><br>
+                Mike T.<br>
+                Male<br>
+                ✓✓✓
+              </div>
+              <div class="resume">
+                <strong>HIRED</strong><br>
+                Dave R.<br>
+                Male<br>
+                ✓✓✓
+              </div>
+            </div>
+            <p style="font-size: 0.9rem; margin-top: 15px; text-align: center;">
+              Tech's history = mostly male hires
+            </p>
+          </div>
+        </div>
+        
+        <div class="panel full-width">
+          <div class="narrative-box danger" style="text-align: center;">
+            The AI learned from a BIASED PAST. It concluded: "Successful candidate = Male"
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: Historical Bias - Consequence -->
+    <div class="comic-page" data-page="4">
+      <div class="grid-2x2">
+        <div class="panel">
+          <div class="scene" style="background: #f8f8f8;">
+            <p style="font-family: 'Bangers'; font-size: 1.3rem; margin-bottom: 15px;">THE RESULT:</p>
+            <div class="resume rejected" style="position: relative; width: 100px; height: 130px; font-size: 0.7rem;">
+              <strong>Sarah Chen</strong><br>
+              MIT Graduate<br>
+              5 Years Exp<br>
+              ⭐⭐⭐⭐⭐
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+            <div class="robot-head">
+              <div class="robot-eyes">
+                <div class="robot-eye"></div>
+                <div class="robot-eye"></div>
+              </div>
+            </div>
+            <div class="speech-bubble" style="margin-top: 15px; background: #1a1a2e; color: var(--danger-red); border-color: var(--danger-red); font-size: 0.95rem;">
+              PENALTY DETECTED:<br>
+              "Women's chess club"<br>
+              "Women's college"<br>
+              <strong>SCORE: -2 POINTS</strong>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: var(--paper-cream);">
+            <div class="action-burst" style="top: 20px; right: 20px;">UNFAIR!</div>
+            <div class="character" style="transform: scale(0.9);">
+              <div class="character-head">
+                <div class="character-eyes">
+                  <div class="eye"></div>
+                  <div class="eye"></div>
+                </div>
+              </div>
+              <div class="character-body" style="background: var(--danger-red);"></div>
+            </div>
+            <div class="speech-bubble" style="margin-top: 15px;">
+              The AI penalized ANY mention of "women" because historically, fewer women were hired!
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: var(--warning-yellow);">
+            <div style="text-align: center; padding: 20px;">
+              <p style="font-family: 'Bangers'; font-size: 1.8rem; margin-bottom: 15px;">⚠️ LESSON ⚠️</p>
+              <p style="font-size: 1.1rem; line-height: 1.5;">
+                <strong>Historical Bias</strong> occurs when AI learns from data reflecting past discrimination.
+              </p>
+              <p style="font-size: 0.9rem; margin-top: 15px; font-style: italic;">
+                Amazon scrapped the system in 2017.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 5: Representation Bias - Setup -->
+    <div class="comic-page" data-page="5">
+      <div class="grid-story">
+        <div class="panel header-panel chapter-header">
+          <h2>Chapter 2: Representation Bias</h2>
+          <p class="chapter-subtitle">"If You're Not in the Data, You Don't Exist"</p>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: linear-gradient(180deg, #1a1a2e, #0f0f1a);">
+            <div class="narrative-box info" style="margin-bottom: 15px;">
+              A major tech company launches facial recognition...
+            </div>
+            <div class="face-scan">
+              <div class="character-head" style="width: 50px; height: 60px; background: #ffd5c8;"></div>
+              <div class="scan-line"></div>
+              <div class="face-result success">✓ MATCH 99.7%</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: #f5f5f5;">
+            <div class="speech-bubble">
+              <strong>ENGINEER:</strong><br>
+              Our system is 99% accurate! Ship it! 🚀
+            </div>
+            <div style="margin-top: 20px;">
+              <div class="character-head" style="width: 40px; height: 50px;">
+                <div class="character-eyes" style="top: 18px;">
+                  <div class="eye" style="width: 7px; height: 9px;"></div>
+                  <div class="eye" style="width: 7px; height: 9px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: #fff0f0;">
+            <p style="font-family: 'Permanent Marker'; color: var(--danger-red); margin-bottom: 10px;">BUT WAIT...</p>
+            <div class="stats-display">
+              <div class="stat-row">
+                <span>Training Data:</span>
+              </div>
+              <div class="stat-row">
+                <span>Light-skinned faces</span>
+                <span class="stat-good">78%</span>
+              </div>
+              <div class="stat-row">
+                <span>Dark-skinned faces</span>
+                <span class="stat-bad">22%</span>
+              </div>
+              <div class="stat-row">
+                <span>Dark-skinned women</span>
+                <span class="stat-bad">4%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel full-width">
+          <div class="narrative-box danger" style="text-align: center;">
+            The training data didn't represent everyone equally. What happens in the real world?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 6: Representation Bias - Consequence -->
+    <div class="comic-page" data-page="6">
+      <div class="grid-2x2">
+        <div class="panel">
+          <div class="scene" style="background: linear-gradient(180deg, #1a1a2e, #0f0f1a);">
+            <p style="color: white; font-family: 'Bangers'; margin-bottom: 10px;">REAL WORLD TEST:</p>
+            <div class="face-scan" style="border-color: var(--danger-red);">
+              <div class="character-head" style="width: 50px; height: 60px; background: #8b6914;"></div>
+              <div class="scan-line" style="background: var(--danger-red);"></div>
+              <div class="face-result fail">✗ NO MATCH</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: var(--paper-cream);">
+            <div class="action-burst" style="top: 10px; left: 10px; font-size: 1.5rem;">ERROR!</div>
+            <div class="stats-display" style="margin-top: 30px;">
+              <p style="color: var(--warning-yellow); margin-bottom: 10px;">ACCURACY BY GROUP:</p>
+              <div class="stat-row">
+                <span>White males</span>
+                <span class="stat-good">99.2%</span>
+              </div>
+              <div class="stat-row">
+                <span>White females</span>
+                <span class="stat-good">93.0%</span>
+              </div>
+              <div class="stat-row">
+                <span>Black males</span>
+                <span class="stat-bad">88.0%</span>
+              </div>
+              <div class="stat-row">
+                <span>Black females</span>
+                <span class="stat-bad">65.3%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: #f8f8f8;">
+            <div class="speech-bubble" style="max-width: 250px;">
+              <strong>RESEARCHER JOY BUOLAMWINI:</strong><br>
+              I had to wear a WHITE MASK for the AI to see my face.
+            </div>
+            <p style="font-size: 0.8rem; margin-top: 15px; text-align: center; color: #666;">
+              — MIT Media Lab Study, 2018
+            </p>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: var(--warning-yellow);">
+            <div style="text-align: center; padding: 15px;">
+              <p style="font-family: 'Bangers'; font-size: 1.6rem; margin-bottom: 15px;">⚠️ LESSON ⚠️</p>
+              <p style="font-size: 1rem; line-height: 1.4;">
+                <strong>Representation Bias</strong> happens when training data under-represents certain groups.
+              </p>
+              <p style="font-size: 0.85rem; margin-top: 10px;">
+                Solution: Improve representation & equality in datasets!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 7: Aggregation Bias -->
+    <div class="comic-page" data-page="7">
+      <div class="grid-story">
+        <div class="panel header-panel chapter-header">
+          <h2>Chapter 3: Aggregation Bias</h2>
+          <p class="chapter-subtitle">"Averages Lie"</p>
+        </div>
+        
+        <div class="panel full-width">
+          <div class="scene" style="background: #f5f5f5; flex-direction: row; justify-content: space-around;">
+            <div class="narrative-box" style="position: absolute; top: 10px; left: 10px; right: 10px;">
+              A government AI calculates "average income" to allocate resources...
+            </div>
+            <div class="city-compare" style="margin-top: 40px;">
+              <div class="city">
+                <div class="city-bar city-a">
+                  <div class="people-icons">👤👤👤👤👤<br>👤👤👤👤👤<br>...</div>
+                </div>
+                <p class="city-label">City A</p>
+                <p class="city-stat">1,000,000 people</p>
+                <p class="city-stat">Avg: $50k</p>
+              </div>
+              <div class="city">
+                <div class="city-bar city-b">
+                  <div class="people-icons">👤👤</div>
+                </div>
+                <p class="city-label">City B</p>
+                <p class="city-stat">100 people</p>
+                <p class="city-stat">Avg: $30k</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+            <div class="robot-head">
+              <div class="robot-eyes">
+                <div class="robot-eye"></div>
+                <div class="robot-eye"></div>
+              </div>
+            </div>
+            <div class="speech-bubble" style="margin-top: 15px; background: #1a1a2e; color: var(--cyber-blue); border-color: var(--cyber-blue); font-size: 0.9rem;">
+              CALCULATING...<br><br>
+              (50×1M + 30×100) ÷ 1,000,100<br>
+              = <strong>$49.99 avg</strong><br><br>
+              City B looks fine! ✓
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: #fff0f0;">
+            <div class="action-burst" style="font-size: 1.8rem; top: 10px; right: 10px;">WRONG!</div>
+            <p style="font-size: 1rem; margin-top: 40px; text-align: center; line-height: 1.5;">
+              City B's 100 struggling people<br>
+              got <strong>ERASED</strong> by<br>
+              City A's million!
+            </p>
+            <p style="font-size: 0.85rem; margin-top: 15px; color: var(--danger-red);">
+              They needed help but were invisible to the AI.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 8: Evaluation Bias -->
+    <div class="comic-page" data-page="8">
+      <div class="grid-story">
+        <div class="panel header-panel chapter-header">
+          <h2>Chapter 4: Evaluation Bias</h2>
+          <p class="chapter-subtitle">"The Test Itself is Broken"</p>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: #f5f5f5;">
+            <div class="narrative-box" style="margin-bottom: 15px; font-size: 0.9rem;">
+              All AI facial recognition systems are tested on the SAME benchmark dataset...
+            </div>
+            <div class="test-paper">
+              <h4>BENCHMARK TEST</h4>
+              <div class="test-question">Q1: White male ✓</div>
+              <div class="test-question">Q2: White male ✓</div>
+              <div class="test-question">Q3: White female ✓</div>
+              <div class="test-question">Q4: White male ✓</div>
+              <div class="grade-stamp">A+</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+            <div class="robot-head">
+              <div class="robot-eyes">
+                <div class="robot-eye"></div>
+                <div class="robot-eye"></div>
+              </div>
+            </div>
+            <div class="robot-body">
+              <div class="robot-screen">99%!</div>
+            </div>
+            <div class="speech-bubble" style="margin-top: 15px; background: var(--justice-green); font-size: 0.9rem;">
+              I passed with flying colors!<br>
+              Ready for deployment! 🎉
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: #fff5f5;">
+            <p style="font-family: 'Permanent Marker'; color: var(--danger-red); margin-bottom: 10px;">THE REAL PROBLEM:</p>
+            <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
+              <p>The benchmark was <strong>BIASED</strong>!</p>
+              <p style="margin-top: 10px;">• 77% white faces</p>
+              <p>• 83% male faces</p>
+              <p>• Mostly well-lit photos</p>
+              <p style="margin-top: 15px; color: var(--danger-red);">
+                <strong>Real world ≠ Benchmark</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel full-width">
+          <div class="narrative-box" style="background: var(--warning-yellow); text-align: center;">
+            <strong>⚠️ EVALUATION BIAS:</strong> When the tests themselves don't represent reality,<br>
+            even "high-scoring" AI systems fail real people.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 9: Summary -->
+    <div class="comic-page" data-page="9">
+      <div class="conclusion-grid">
+        <div class="panel full-width chapter-header">
+          <h2>The Four Horsemen of AI Bias</h2>
+          <p class="chapter-subtitle">Remember These!</p>
+        </div>
+        
+        <div class="panel">
+          <div class="bias-recap">
+            <div class="bias-icon historical">🕰️</div>
+            <div class="bias-text">
+              <h4>Historical Bias</h4>
+              <p>AI learns from biased past data and repeats old discrimination.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="bias-recap">
+            <div class="bias-icon representation">👥</div>
+            <div class="bias-text">
+              <h4>Representation Bias</h4>
+              <p>Some groups are under-represented in training data.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="bias-recap">
+            <div class="bias-icon aggregation">📊</div>
+            <div class="bias-text">
+              <h4>Aggregation Bias</h4>
+              <p>Averages hide the struggles of minority groups.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="bias-recap">
+            <div class="bias-icon evaluation">🎯</div>
+            <div class="bias-text">
+              <h4>Evaluation Bias</h4>
+              <p>Biased benchmarks give false confidence.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel full-width cta-panel">
+          <h3>Bias Doesn't Just Come From Data!</h3>
+          <p>It also comes from the humans who build, train, and deploy AI systems.<br>
+          <strong>That means YOU can help fix it.</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 10: Call to Action & Credits -->
+    <div class="comic-page" data-page="10">
+      <div class="grid-climax">
+        <div class="panel chapter-header">
+          <h2>What Can YOU Do?</h2>
+        </div>
+        
+        <div class="panel">
+          <div class="scene" style="background: var(--paper-cream); padding: 30px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%;">
+              <div class="narrative-box success">
+                <strong>1. ASK QUESTIONS</strong><br>
+                "What data trained this AI?"<br>
+                "Who was in the training set?"
+              </div>
+              <div class="narrative-box info">
+                <strong>2. DEMAND TRANSPARENCY</strong><br>
+                Companies should disclose how their AI makes decisions.
+              </div>
+              <div class="narrative-box" style="background: var(--shadow-purple); color: white;">
+                <strong>3. DIVERSIFY TEAMS</strong><br>
+                Different perspectives catch different blind spots.
+              </div>
+              <div class="narrative-box danger">
+                <strong>4. TEST ON EVERYONE</strong><br>
+                Benchmarks must represent ALL users, not just the majority.
+              </div>
+            </div>
+            
+            <div style="margin-top: 30px; text-align: center;">
+              <div class="robot-head" style="margin: 0 auto;">
+                <div class="robot-eyes">
+                  <div class="robot-eye" style="background: var(--justice-green); box-shadow: 0 0 10px var(--justice-green);"></div>
+                  <div class="robot-eye" style="background: var(--justice-green); box-shadow: 0 0 10px var(--justice-green);"></div>
+                </div>
+              </div>
+              <div class="speech-bubble" style="margin: 20px auto 0; background: var(--justice-green);">
+                Together, we can build AI that's fair for <strong>EVERYONE</strong>!
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="credits">
+            <h3 style="font-family: 'Bangers'; font-size: 2rem; margin-bottom: 15px;">THE END</h3>
+            <p style="font-size: 1rem; margin-bottom: 10px;">Based on "Big Data, Big Responsibilities" notes</p>
+            <p style="font-size: 0.9rem; color: #666;">
+              Real cases: Amazon AI Hiring Tool (2014-2017)<br>
+              Gender Shades Study by Joy Buolamwini (2018)
+            </p>
+            <div style="margin-top: 25px; padding-top: 20px; border-top: 3px solid var(--ink-black);">
+              <p style="font-family: 'Bangers'; font-size: 1.5rem; color: var(--shadow-purple);">
+                🎓 Now YOU know about AI Bias!
+              </p>
+              <p style="font-size: 0.9rem; margin-top: 10px;">Share this knowledge. Build better AI.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-controls">
+    <button class="nav-btn" id="prevBtn" disabled>◀ Previous</button>
+    <button class="nav-btn" id="nextBtn">Next ▶</button>
+  </div>
+
+  <script>
+    const pages = document.querySelectorAll('.comic-page');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageIndicator = document.getElementById('currentPage');
+    let currentPage = 1;
+    const totalPages = pages.length;
+
+    function showPage(pageNum) {
+      // Hide ALL pages first with direct style
+      pages.forEach(page => {
+        page.style.display = 'none';
+        page.classList.remove('active');
+      });
+      
+      // Show only the target page
+      const targetPage = document.querySelector(`[data-page="${pageNum}"]`);
+      if (targetPage.classList.contains('page-cover')) {
+        targetPage.style.display = 'flex';
+      } else {
+        targetPage.style.display = 'block';
+      }
+      targetPage.classList.add('active');
+      
+      pageIndicator.textContent = pageNum;
+      
+      // Scroll to top of page immediately
+      window.scrollTo(0, 0);
+      
+      prevBtn.disabled = pageNum === 1;
+      nextBtn.disabled = pageNum === totalPages;
+      
+      if (pageNum === totalPages) {
+        nextBtn.textContent = 'The End';
+      } else {
+        nextBtn.textContent = 'Next ▶';
+      }
+    }
+
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        showPage(currentPage);
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        showPage(currentPage);
+      }
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        if (currentPage < totalPages) {
+          currentPage++;
+          showPage(currentPage);
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (currentPage > 1) {
+          currentPage--;
+          showPage(currentPage);
+        }
+      }
+    });
+
+    // Touch swipe support
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    });
+
+    document.addEventListener('touchend', (e) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchStartX - touchEndX;
+      
+      if (Math.abs(diff) > 50) {
+        if (diff > 0 && currentPage < totalPages) {
+          currentPage++;
+          showPage(currentPage);
+        } else if (diff < 0 && currentPage > 1) {
+          currentPage--;
+          showPage(currentPage);
+        }
+      }
+    });
+
+    // Initialize first page properly on load
+    showPage(1);
+  </script>
+</body>
+</html>
